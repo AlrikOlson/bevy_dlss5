@@ -40,8 +40,11 @@ DlssNeuralRendering {
     tone: 0.0,        // broad lighting change, keep low
     structure: 1.6,   // AO / contact shadows / micro reflections, this is the visible part
     preset: bevy_dlss5::DlssNrPreset::Auto,
+    reset: false,     // set true for one frame on a camera cut, like TemporalAntiAliasing::reset
 }
 ```
+
+Temporal history is kept between frames (it's stable with Bevy's motion vectors, no ghosting on a moving camera); `reset` drops it for one frame and clears itself.
 
 Remove the component to turn it off. `DlssNeuralRenderingStatus` is a resource you can read to see if it actually came up:
 
@@ -89,8 +92,9 @@ If any of this is missing you get one warning in the log and your game runs norm
 ## How it works
 
 - `build()` registers a `raw_vulkan_init` callback that enables `VK_NVX_binary_import`, `VK_NVX_image_view_handle`, `VK_KHR_push_descriptor`, `VK_KHR_maintenance4` and buffer device address. That's why the plugin has to be added before `DefaultPlugins`.
-- `finish()` adds a render graph system in `Core3d`'s post process set. It runs once per camera with the component and writes the result back into the camera's main texture in place (no ping pong, which was causing a 2 frame flicker).
+- `finish()` adds a render graph system in `Core3d`'s post process set, ordered after tonemapping. It runs once per camera with the component and writes the result back into the camera's main texture in place (no ping pong, which was causing a 2 frame flicker).
 - Feature 18 wants gamma encoded display-referred color, Bevy's post tonemap texture is linear. Two tiny compute passes convert to sRGB before and back to linear after. Skip this and you get red hallucinations everywhere.
+- The "after tonemapping" part matters. An earlier version had no ordering constraint, the scheduler ran the node before tonemapping, and the sRGB pass clamped the HDR frame at linear 1.0. Nothing on the NR side could get brighter than what the tonemapper makes of 1.0 (about 198/255 with TonyMcMapface), so emissives, bloom and sun patches all came out dimmer than with NR off. If you fork this, keep the `.after(tonemapping)`.
 - Depth and motion vectors come from the prepasses the component requires.
 
 ## About patching the DLL
@@ -106,7 +110,8 @@ I tried this on the real NVIDIA DLL on a 4090 so you don't have to: the check pa
 ## Known issues
 
 - Feature handles are only freed on resolution change or exit. Spawning and despawning lots of NR cameras leaks.
-- The tone parameter mostly does nothing with the fallback preset. Control brightness with scene exposure; if the scene is already bright NR will clip highlights.
+- The tone parameter mostly does nothing with the fallback preset. Control brightness with scene exposure.
+- NR pulls some fully blown highlights down a little (a neon sign at 255 may come back at 240). That's the network doing photographic highlight handling, not clipping; a zero-strength pass reproduces the input exactly.
 
 ## License
 

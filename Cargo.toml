@@ -1,6 +1,6 @@
 [package]
 name = "bevy_dlss5"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "DLSS 5 Neural Rendering (NGX feature 18) as a Bevy 0.19 plugin"
 license = "MIT OR Apache-2.0"

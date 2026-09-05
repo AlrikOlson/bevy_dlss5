@@ -6,6 +6,7 @@ pub mod patch;
 
 use bevy::camera::{CameraMainTextureUsages, Hdr};
 use bevy::core_pipeline::prepass::{DepthPrepass, MotionVectorPrepass, ViewPrepassTextures};
+use bevy::core_pipeline::tonemapping::tonemapping;
 use bevy::core_pipeline::{Core3d, Core3dSystems};
 use bevy::log::{info, warn};
 use bevy::prelude::*;
@@ -245,11 +246,14 @@ pub struct DlssNeuralRendering {
     pub structure: f32,
     /// Weight preset.
     pub preset: DlssNrPreset,
+    /// Drop the temporal history this frame (a camera cut, a teleport).
+    /// Reset automatically to `false` after the frame.
+    pub reset: bool,
 }
 
 impl Default for DlssNeuralRendering {
     fn default() -> Self {
-        Self { intensity: 1.0, tone: 0.0, structure: 1.6, preset: DlssNrPreset::Auto }
+        Self { intensity: 1.0, tone: 0.0, structure: 1.6, preset: DlssNrPreset::Auto, reset: false }
     }
 }
 
@@ -340,6 +344,9 @@ impl Plugin for DlssNeuralRenderingPlugin {
         // Mirror the camera entity (and later its settings) into the render world.
         app.add_plugins(SyncComponentPlugin::<DlssNeuralRendering>::default());
         app.add_systems(Update, ensure_camera_texture_usages);
+        // `reset` is a one-frame request: it was extracted at the end of the
+        // previous frame, clear it before this frame's systems run.
+        app.add_systems(First, clear_reset_requests);
     }
 
     fn finish(&self, app: &mut App) {
@@ -361,9 +368,24 @@ impl Plugin for DlssNeuralRenderingPlugin {
             }),
         });
         render_app.add_systems(ExtractSchedule, extract_dlss_settings);
-        // Runs after tonemapping (display-referred color), which is what feature
-        // 18 expects.
-        render_app.add_systems(Core3d, dlss_nr_node.in_set(Core3dSystems::PostProcess));
+        // Must run after tonemapping: feature 18 wants display-referred color,
+        // and the sRGB bridge clamps to [0, 1]. Without this constraint the
+        // scheduler put the node before tonemapping, the clamp cut the HDR
+        // frame at linear 1.0, and nothing on the NR side could get brighter
+        // than TonyMcMapface(1.0) (198/255): emissives, sun patches and bloom
+        // all lost their top end.
+        render_app.add_systems(
+            Core3d,
+            dlss_nr_node.in_set(Core3dSystems::PostProcess).after(tonemapping),
+        );
+    }
+}
+
+fn clear_reset_requests(mut cams: Query<&mut DlssNeuralRendering>) {
+    for mut settings in &mut cams {
+        if settings.reset {
+            settings.reset = false;
+        }
     }
 }
 
@@ -530,8 +552,10 @@ fn dlss_nr_node(
     if vs.feature == 0 {
         return; // creation failed earlier for this view
     }
-    // Moving camera: reset temporal history each frame to avoid ghosting.
-    let reset = true;
+    // Temporal history is kept across frames (it accumulates detail and is
+    // stable with Bevy's motion vectors); drop it on the first evaluation and
+    // whenever the app asks (camera cuts).
+    let reset = vs.evals == 0 || settings.reset;
     vs.evals += 1;
     let bridge = &vs.bridge;
 
