@@ -1,10 +1,10 @@
 # bevy_dlss5
 
-DLSS 5 Neural Rendering (NGX feature 18) as a Bevy 0.19 plugin.
+DLSS 5 Neural Rendering for Bevy 0.19.1. It adds neural lighting detail to the rendered image using NGX feature 18, with the camera's depth and motion vectors.
 
-Neural Rendering is the new DLSS 5 thing that re-lights your frame with a neural net: it adds contact shadows, ambient occlusion, small reflections, more material detail. It is not an upscaler and not an anti-aliaser, it's a post process that runs on the final HDR frame plus depth and motion vectors.
+This is experimental. It has been tested on Windows with an RTX 4090 and Vulkan, using a DLL built for that GPU. The runtime setup has a few quirks; read [Requirements](#requirements) before trying it.
 
-NVIDIA ships it for RTX 50 only. This plugin runs it on RTX 40 too (tested on a 4090), see the requirements section for the catch.
+[Releases](https://github.com/AlrikOlson/bevy_dlss5/releases) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
 ## What it looks like
 
@@ -19,6 +19,16 @@ Night, lit by the lamp glass and string lights only: Bevy Solari ray tracing, DL
 Day, the ordinary raster path (shadow maps, SSAO, SSR) with Neural Rendering. The contact shadows under the leaves and in the hedge are the network's.
 
 ## Usage
+
+Add the tagged version to your `Cargo.toml`:
+
+```toml
+[dependencies]
+bevy = "0.19.1"
+bevy_dlss5 = { git = "https://github.com/AlrikOlson/bevy_dlss5", tag = "v0.1.1" }
+```
+
+Add the plugin before `DefaultPlugins`, then put the component on your camera:
 
 ```rust,ignore
 use bevy::prelude::*;
@@ -56,7 +66,7 @@ DlssNeuralRendering {
 }
 ```
 
-Temporal history is kept between frames (it's stable with Bevy's motion vectors, no ghosting on a moving camera); `reset` drops it for one frame and clears itself.
+Temporal history is kept between frames using Bevy's motion vectors. Set `reset` on a camera cut; it clears itself after one frame.
 
 Remove the component to turn it off. `DlssNeuralRenderingStatus` is a resource you can read to see if it actually came up:
 
@@ -69,7 +79,7 @@ fn hud(status: Res<bevy_dlss5::DlssNeuralRenderingStatus>) {
 
 ## Requirements
 
-This is the annoying part.
+The current integration uses the Windows NGX library.
 
 1. **Vulkan.** Set `WGPU_BACKEND=vulkan` or force `Backends::VULKAN` in `RenderPlugin`. On any other backend the plugin just disables itself.
 
@@ -99,7 +109,9 @@ This is the annoying part.
 
 4. **The NGX SDK at build time.** Set `DLSS_SDK` to a checkout of https://github.com/NVIDIA/DLSS so `build.rs` can link `nvsdk_ngx_d.lib`. `cargo check` works without it, linking a binary doesn't. No bindgen, no clang, no Vulkan SDK needed.
 
-If any of this is missing you get one warning in the log and your game runs normally without NR.
+If runtime initialization fails, the plugin logs a warning and the game continues without NR. A missing SDK at link time is a build error.
+
+The [minimal example](examples/minimal.rs) creates a small scene and lets you toggle NR with **N**. Build it with `cargo build --release --example minimal`, then follow the runtime setup above for the binary in `target/release/examples/`.
 
 ## How it works
 
@@ -121,10 +133,11 @@ I tried this on the real NVIDIA DLL on a 4090 so you don't have to: the check pa
 
 ## Known issues
 
+- Only Windows, Vulkan and an RTX 4090 have been tested here. The DLL folder names above are selection rules, not a list of tested GPUs.
 - Feature handles are only freed on resolution change or exit. Spawning and despawning lots of NR cameras leaks.
 - The tone parameter mostly does nothing with the fallback preset. Control brightness with scene exposure.
 - NR pulls some fully blown highlights down a little (a neon sign at 255 may come back at 240). That's the network doing photographic highlight handling, not clipping; a zero-strength pass reproduces the input exactly.
 
 ## License
 
-MIT or Apache-2.0, your pick. The `nvngx_dlssnr.dll` and NGX SDK are NVIDIA's and under NVIDIA's terms, nothing of theirs is in this repo.
+[MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), your pick. The NGX SDK and runtime DLLs have separate NVIDIA terms and are not included here. The Bistro screenshots use the Amazon Lumberyard Bistro scene from NVIDIA ORCA, licensed under CC BY 4.0.
