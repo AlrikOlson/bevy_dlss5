@@ -1,2 +1,5 @@
 target/
 *.dll
+
+# README screenshots (the repo-wide *.jpg rule would hide them)
+!docs/*.jpg

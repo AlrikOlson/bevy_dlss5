@@ -6,6 +6,18 @@ Neural Rendering is the new DLSS 5 thing that re-lights your frame with a neural
 
 NVIDIA ships it for RTX 50 only. This plugin runs it on RTX 40 too (tested on a 4090), see the requirements section for the catch.
 
+## What it looks like
+
+Both frames are Bevy 0.19 with Neural Rendering on, from the test rig in this repo's parent (`bevy-sponza`), 1080p, no upscaling. Scene: Amazon Lumberyard Bistro, via NVIDIA ORCA (CC BY 4.0).
+
+![Bistro at night: Bevy Solari ray-traced lighting + DLSS Ray Reconstruction + Neural Rendering](docs/bistro_night_solari_nr.jpg)
+
+Night, lit by the lamp glass and string lights only: Bevy Solari ray tracing, DLSS Ray Reconstruction as the denoiser, then Neural Rendering on top. Two DLSS clients in one process, it works.
+
+![Bistro by day: the raster path + Neural Rendering](docs/bistro_day_nr.jpg)
+
+Day, the ordinary raster path (shadow maps, SSAO, SSR) with Neural Rendering. The contact shadows under the leaves and in the hedge are the network's.
+
 ## Usage
 
 ```rust,ignore
