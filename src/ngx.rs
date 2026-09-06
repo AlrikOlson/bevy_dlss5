@@ -18,9 +18,17 @@ type Pfn = *const c_void;
 // Core NGX (linked from nvsdk_ngx_d.lib).
 extern "C" {
     fn NVSDK_NGX_VULKAN_Init_with_ProjectID(
-        project_id: *const c_char, engine_type: u32, engine_version: *const c_char,
-        app_data_path: *const u16, instance: VkH, pd: VkH, device: VkH,
-        gipa: Pfn, gdpa: Pfn, feature_info: *const c_void, sdk_version: u32,
+        project_id: *const c_char,
+        engine_type: u32,
+        engine_version: *const c_char,
+        app_data_path: *const u16,
+        instance: VkH,
+        pd: VkH,
+        device: VkH,
+        gipa: Pfn,
+        gdpa: Pfn,
+        feature_info: *const c_void,
+        sdk_version: u32,
     ) -> u32;
     fn NVSDK_NGX_VULKAN_GetCapabilityParameters(out: *mut *mut c_void) -> u32;
     fn NVSDK_NGX_Parameter_SetUI(p: *mut c_void, n: *const c_char, v: u32);
@@ -55,14 +63,27 @@ pub struct ResourceVk {
 }
 impl ResourceVk {
     pub fn image_view(
-        view: u64, image: u64, format: u32, width: u32, height: u32,
-        depth_aspect: bool, read_write: bool,
+        view: u64,
+        image: u64,
+        format: u32,
+        width: u32,
+        height: u32,
+        depth_aspect: bool,
+        read_write: bool,
     ) -> Self {
         Self {
-            view, image,
+            view,
+            image,
             aspect: if depth_aspect { 0x2 } else { 0x1 },
-            base_mip: 0, level_count: 1, base_layer: 0, layer_count: 1,
-            format, width, height, type_: 0, read_write: read_write as u32,
+            base_mip: 0,
+            level_count: 1,
+            base_layer: 0,
+            layer_count: 1,
+            format,
+            width,
+            height,
+            type_: 0,
+            read_write: read_write as u32,
         }
     }
 }
@@ -103,12 +124,23 @@ impl NgxCore {
         let engine = CString::new(env!("CARGO_PKG_VERSION")).unwrap();
         let tmp = std::env::temp_dir().join("bevy_dlss5_ngx");
         let _ = std::fs::create_dir_all(&tmp);
-        let data_path: Vec<u16> =
-            tmp.to_string_lossy().encode_utf16().chain(std::iter::once(0)).collect();
+        let data_path: Vec<u16> = tmp
+            .to_string_lossy()
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
 
         let r = NVSDK_NGX_VULKAN_Init_with_ProjectID(
-            proj.as_ptr(), 0, engine.as_ptr(), data_path.as_ptr(),
-            h.instance, h.physical_device, h.device, h.gipa, h.gdpa, ptr::null(),
+            proj.as_ptr(),
+            0,
+            engine.as_ptr(),
+            data_path.as_ptr(),
+            h.instance,
+            h.physical_device,
+            h.device,
+            h.gipa,
+            h.gdpa,
+            ptr::null(),
             NGX_VERSION_API,
         );
         if r != NGX_SUCCESS {
@@ -122,19 +154,30 @@ impl NgxCore {
 
         let lib = libloading::Library::new(dll)
             .map_err(|e| format!("could not load DLSSNR DLL '{}': {e}", dll.display()))?;
-        let init2: libloading::Symbol<PfnInitExt2> =
-            lib.get(b"NVSDK_NGX_VULKAN_Init_Ext2\0").map_err(|e| e.to_string())?;
-        let create1: libloading::Symbol<PfnCreate1> =
-            lib.get(b"NVSDK_NGX_VULKAN_CreateFeature1\0").map_err(|e| e.to_string())?;
-        let eval: libloading::Symbol<PfnEval> =
-            lib.get(b"NVSDK_NGX_VULKAN_EvaluateFeature\0").map_err(|e| e.to_string())?;
-        let release: libloading::Symbol<PfnRelease> =
-            lib.get(b"NVSDK_NGX_VULKAN_ReleaseFeature\0").map_err(|e| e.to_string())?;
+        let init2: libloading::Symbol<PfnInitExt2> = lib
+            .get(b"NVSDK_NGX_VULKAN_Init_Ext2\0")
+            .map_err(|e| e.to_string())?;
+        let create1: libloading::Symbol<PfnCreate1> = lib
+            .get(b"NVSDK_NGX_VULKAN_CreateFeature1\0")
+            .map_err(|e| e.to_string())?;
+        let eval: libloading::Symbol<PfnEval> = lib
+            .get(b"NVSDK_NGX_VULKAN_EvaluateFeature\0")
+            .map_err(|e| e.to_string())?;
+        let release: libloading::Symbol<PfnRelease> = lib
+            .get(b"NVSDK_NGX_VULKAN_ReleaseFeature\0")
+            .map_err(|e| e.to_string())?;
         let (create1, eval, release) = (*create1, *eval, *release);
 
         let ri = (init2)(
-            0x1122_3344_5566_7788, data_path.as_ptr(), h.instance, h.physical_device,
-            h.device, h.gipa, h.gdpa, NGX_VERSION_API, params as *const c_void,
+            0x1122_3344_5566_7788,
+            data_path.as_ptr(),
+            h.instance,
+            h.physical_device,
+            h.device,
+            h.gipa,
+            h.gdpa,
+            NGX_VERSION_API,
+            params as *const c_void,
         );
         if ri != NGX_SUCCESS {
             // 0xBAD00002 (PlatformError) here almost always means the process
@@ -144,7 +187,13 @@ impl NgxCore {
                  must be named `nvngx.dll` (NGX caller check)"
             ));
         }
-        Ok(Self { params, _lib: lib, create1, eval, release })
+        Ok(Self {
+            params,
+            _lib: lib,
+            create1,
+            eval,
+            release,
+        })
     }
 
     /// Create a feature-18 handle for a given size. Records weight uploads into
@@ -154,7 +203,12 @@ impl NgxCore {
     /// `cmdbuf` must be a Vulkan command buffer in the recording state on the
     /// same device this core was initialized with.
     pub unsafe fn create_feature(
-        &self, device: VkH, cmdbuf: VkH, w: u32, h: u32, preset: i32,
+        &self,
+        device: VkH,
+        cmdbuf: VkH,
+        w: u32,
+        h: u32,
+        preset: i32,
     ) -> Result<*mut c_void, u32> {
         let set_ui = |n: &str, v: u32| {
             let c = CString::new(n).unwrap();
@@ -177,7 +231,13 @@ impl NgxCore {
         set_ui("DLSSNR.Enabled", 1);
         set_i("DLSSNR.Hint.Render.Preset", preset);
         let mut handle: *mut c_void = ptr::null_mut();
-        let rc = (self.create1)(device, cmdbuf, FEATURE_DLSSNR, self.params as *const c_void, &mut handle);
+        let rc = (self.create1)(
+            device,
+            cmdbuf,
+            FEATURE_DLSSNR,
+            self.params as *const c_void,
+            &mut handle,
+        );
         if rc == NGX_SUCCESS && !handle.is_null() {
             Ok(handle)
         } else {
@@ -192,25 +252,49 @@ impl NgxCore {
     /// `cmdbuf` and `feature` must be valid for this core's device.
     #[allow(clippy::too_many_arguments)]
     pub unsafe fn evaluate(
-        &self, cmdbuf: VkH, feature: *mut c_void,
-        color: &mut ResourceVk, output: &mut ResourceVk,
-        depth: &mut ResourceVk, mvec: &mut ResourceVk,
-        w: u32, h: u32, intensity: f32, tone: f32, structure: f32, reset: bool,
+        &self,
+        cmdbuf: VkH,
+        feature: *mut c_void,
+        color: &mut ResourceVk,
+        output: &mut ResourceVk,
+        depth: &mut ResourceVk,
+        mvec: &mut ResourceVk,
+        w: u32,
+        h: u32,
+        intensity: f32,
+        tone: f32,
+        structure: f32,
+        reset: bool,
     ) -> u32 {
         let p = self.params;
-        let set_ui = |n: &str, v: u32| { let c = CString::new(n).unwrap(); NVSDK_NGX_Parameter_SetUI(p, c.as_ptr(), v); };
-        let set_f = |n: &str, v: f32| { let c = CString::new(n).unwrap(); NVSDK_NGX_Parameter_SetF(p, c.as_ptr(), v); };
-        let set_ptr = |n: &str, v: *mut c_void| { let c = CString::new(n).unwrap(); NVSDK_NGX_Parameter_SetVoidPointer(p, c.as_ptr(), v); };
+        let set_ui = |n: &str, v: u32| {
+            let c = CString::new(n).unwrap();
+            NVSDK_NGX_Parameter_SetUI(p, c.as_ptr(), v);
+        };
+        let set_f = |n: &str, v: f32| {
+            let c = CString::new(n).unwrap();
+            NVSDK_NGX_Parameter_SetF(p, c.as_ptr(), v);
+        };
+        let set_ptr = |n: &str, v: *mut c_void| {
+            let c = CString::new(n).unwrap();
+            NVSDK_NGX_Parameter_SetVoidPointer(p, c.as_ptr(), v);
+        };
         set_ptr("DLSSNR.Color", color as *mut _ as *mut c_void);
         set_ptr("DLSSNR.Output", output as *mut _ as *mut c_void);
         set_ptr("DLSSNR.Depth", depth as *mut _ as *mut c_void);
         set_ptr("DLSSNR.MVec", mvec as *mut _ as *mut c_void);
         for (n, v) in [
-            ("DLSSNR.ColorSubrectWidth", w), ("DLSSNR.ColorSubrectHeight", h),
-            ("DLSSNR.DepthSubrectWidth", w), ("DLSSNR.DepthSubrectHeight", h),
-            ("DLSSNR.MVecSubrectWidth", w), ("DLSSNR.MVecSubrectHeight", h),
-            ("DLSSNR.OutputSubrectWidth", w), ("DLSSNR.OutputSubrectHeight", h),
-        ] { set_ui(n, v); }
+            ("DLSSNR.ColorSubrectWidth", w),
+            ("DLSSNR.ColorSubrectHeight", h),
+            ("DLSSNR.DepthSubrectWidth", w),
+            ("DLSSNR.DepthSubrectHeight", h),
+            ("DLSSNR.MVecSubrectWidth", w),
+            ("DLSSNR.MVecSubrectHeight", h),
+            ("DLSSNR.OutputSubrectWidth", w),
+            ("DLSSNR.OutputSubrectHeight", h),
+        ] {
+            set_ui(n, v);
+        }
         set_f("DLSSNR.MVecScaleX", w as f32);
         set_f("DLSSNR.MVecScaleY", h as f32);
         set_ui("DLSSNR.Reset", reset as u32);
@@ -220,7 +304,12 @@ impl NgxCore {
         set_f("DLSSNR.GlobalToneStrength", tone);
         set_f("DLSSNR.LocalToneStrength", tone);
         set_f("DLSSNR.LocalStructureStrength", structure);
-        (self.eval)(cmdbuf, feature as *const c_void, self.params as *const c_void, ptr::null())
+        (self.eval)(
+            cmdbuf,
+            feature as *const c_void,
+            self.params as *const c_void,
+            ptr::null(),
+        )
     }
 
     /// Release a feature handle.
@@ -276,7 +365,11 @@ pub unsafe fn raw_image(t: &wgpu::Texture) -> u64 {
 /// The adapter must be on the Vulkan backend.
 pub unsafe fn vk_format(adapter: &wgpu::Adapter, t: &wgpu::Texture) -> u32 {
     use wgpu::hal::api::Vulkan;
-    adapter.as_hal::<Vulkan>().unwrap().texture_format_as_raw(t.format()).as_raw() as u32
+    adapter
+        .as_hal::<Vulkan>()
+        .unwrap()
+        .texture_format_as_raw(t.format())
+        .as_raw() as u32
 }
 
 pub fn raw_command_buffer(enc: &mut wgpu::CommandEncoder) -> VkH {

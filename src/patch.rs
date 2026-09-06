@@ -36,10 +36,12 @@ struct Edit {
 const SITE_A: Edit = Edit {
     name: "arch-target",
     find: &[
-        0x48, 0x8b, 0xd3, 0xc7, 0x44, 0x24, 0x3c, 0xb0, 0x01, 0x00, 0x00, 0xe8, 0xc3, 0x98, 0x04, 0x00,
+        0x48, 0x8b, 0xd3, 0xc7, 0x44, 0x24, 0x3c, 0xb0, 0x01, 0x00, 0x00, 0xe8, 0xc3, 0x98, 0x04,
+        0x00,
     ],
     replace: &[
-        0x48, 0x8b, 0xd3, 0xc7, 0x44, 0x24, 0x3c, 0x90, 0x01, 0x00, 0x00, 0xe8, 0xc3, 0x98, 0x04, 0x00,
+        0x48, 0x8b, 0xd3, 0xc7, 0x44, 0x24, 0x3c, 0x90, 0x01, 0x00, 0x00, 0xe8, 0xc3, 0x98, 0x04,
+        0x00,
     ],
 };
 
@@ -72,8 +74,13 @@ pub enum PatchError {
 impl std::fmt::Display for PatchError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PatchError::NotFound(s) => write!(f, "patch site '{s}' not found (unsupported or non-genuine DLL)"),
-            PatchError::Ambiguous(s, n) => write!(f, "patch site '{s}' matched {n} times (ambiguous)"),
+            PatchError::NotFound(s) => write!(
+                f,
+                "patch site '{s}' not found (unsupported or non-genuine DLL)"
+            ),
+            PatchError::Ambiguous(s, n) => {
+                write!(f, "patch site '{s}' matched {n} times (ambiguous)")
+            }
             PatchError::AlreadyPatched => write!(f, "DLL is already gate-patched"),
         }
     }
@@ -161,7 +168,10 @@ mod tests {
         assert_eq!(report.offsets.len(), 2);
         assert!(is_patched(&buf));
         // Second run is a no-op.
-        assert!(matches!(patch_gate(&mut buf), Err(PatchError::AlreadyPatched)));
+        assert!(matches!(
+            patch_gate(&mut buf),
+            Err(PatchError::AlreadyPatched)
+        ));
     }
 
     #[test]

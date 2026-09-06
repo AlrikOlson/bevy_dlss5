@@ -94,7 +94,11 @@ impl Bridge {
         let tex = |label: &str| {
             let t = device.create_texture(&TextureDescriptor {
                 label: Some(label),
-                size: Extent3d { width, height, depth_or_array_layers: 1 },
+                size: Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: TextureDimension::D2,
@@ -120,15 +124,26 @@ impl Bridge {
 
     /// Run one compute pass (encode or decode) reading `src` and writing `dst`.
     pub fn pass(
-        &self, device: &Device, encoder: &mut CommandEncoder, decode: bool,
-        src: &TextureView, dst: &TextureView, w: u32, h: u32,
+        &self,
+        device: &Device,
+        encoder: &mut CommandEncoder,
+        decode: bool,
+        src: &TextureView,
+        dst: &TextureView,
+        (w, h): (u32, u32),
     ) {
         let bg = device.create_bind_group(&BindGroupDescriptor {
             label: Some("dlss5_bridge_bg"),
             layout: &self.bgl,
             entries: &[
-                BindGroupEntry { binding: 0, resource: BindingResource::TextureView(src) },
-                BindGroupEntry { binding: 1, resource: BindingResource::TextureView(dst) },
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureView(src),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::TextureView(dst),
+                },
             ],
         });
         let mut cp = encoder.begin_compute_pass(&ComputePassDescriptor {

@@ -10,10 +10,10 @@ use bevy::core_pipeline::tonemapping::tonemapping;
 use bevy::core_pipeline::{Core3d, Core3dSystems};
 use bevy::log::{info, warn};
 use bevy::prelude::*;
-use bevy::render::sync_component::SyncComponent;
 use bevy::render::render_resource::{CommandEncoderDescriptor, TextureUsages};
 use bevy::render::renderer::raw_vulkan_init::RawVulkanInitSettings;
 use bevy::render::renderer::{RenderAdapter, RenderContext, RenderDevice, ViewQuery};
+use bevy::render::sync_component::SyncComponent;
 use bevy::render::sync_component::SyncComponentPlugin;
 use bevy::render::sync_world::{MainEntity, RenderEntity};
 use bevy::render::view::ViewTarget;
@@ -154,18 +154,27 @@ pub struct DlssNeuralRenderingPlugin {
 
 impl Default for DlssNeuralRenderingPlugin {
     fn default() -> Self {
-        Self { dll_source: DllSource::Auto, project_id: DEFAULT_PROJECT_ID.to_string() }
+        Self {
+            dll_source: DllSource::Auto,
+            project_id: DEFAULT_PROJECT_ID.to_string(),
+        }
     }
 }
 
 impl DlssNeuralRenderingPlugin {
     /// Use one explicit DLL file.
     pub fn with_dll(path: impl Into<PathBuf>) -> Self {
-        Self { dll_source: DllSource::File(path.into()), project_id: DEFAULT_PROJECT_ID.to_string() }
+        Self {
+            dll_source: DllSource::File(path.into()),
+            project_id: DEFAULT_PROJECT_ID.to_string(),
+        }
     }
     /// Auto-select the arch-matched DLL from a directory in the community layout.
     pub fn with_arch_dir(dir: impl Into<PathBuf>) -> Self {
-        Self { dll_source: DllSource::ArchDir(dir.into()), project_id: DEFAULT_PROJECT_ID.to_string() }
+        Self {
+            dll_source: DllSource::ArchDir(dir.into()),
+            project_id: DEFAULT_PROJECT_ID.to_string(),
+        }
     }
 }
 
@@ -184,7 +193,11 @@ fn resolve_dll(source: &DllSource, adapter_name: &str) -> Result<PathBuf, String
         if path.exists() {
             Ok(path)
         } else {
-            Err(format!("no {} for {tier:?} at {}", DLSSNR_DLL_NAME, path.display()))
+            Err(format!(
+                "no {} for {tier:?} at {}",
+                DLSSNR_DLL_NAME,
+                path.display()
+            ))
         }
     };
     match source {
@@ -253,7 +266,13 @@ pub struct DlssNeuralRendering {
 
 impl Default for DlssNeuralRendering {
     fn default() -> Self {
-        Self { intensity: 1.0, tone: 0.0, structure: 1.6, preset: DlssNrPreset::Auto, reset: false }
+        Self {
+            intensity: 1.0,
+            tone: 0.0,
+            structure: 1.6,
+            preset: DlssNrPreset::Auto,
+            reset: false,
+        }
     }
 }
 
@@ -299,7 +318,9 @@ impl Plugin for DlssNeuralRenderingPlugin {
         // before RenderPlugin builds the device — i.e. add this plugin before
         // DefaultPlugins. (The render-world setup happens in `finish()`, which
         // runs once the RenderApp exists.)
-        let mut settings = app.world_mut().get_resource_or_init::<RawVulkanInitSettings>();
+        let mut settings = app
+            .world_mut()
+            .get_resource_or_init::<RawVulkanInitSettings>();
         // SAFETY: we only add extensions/features the adapter reports supported,
         // and we never enable buffer_device_address twice.
         unsafe {
@@ -324,7 +345,8 @@ impl Plugin for DlssNeuralRenderingPlugin {
                         || *e == ash::vk::EXT_BUFFER_DEVICE_ADDRESS_NAME
                 });
                 if !has_bda && caps.supports_extension(ash::vk::EXT_BUFFER_DEVICE_ADDRESS_NAME) {
-                    args.extensions.push(ash::vk::EXT_BUFFER_DEVICE_ADDRESS_NAME);
+                    args.extensions
+                        .push(ash::vk::EXT_BUFFER_DEVICE_ADDRESS_NAME);
                     let feats = Box::leak(Box::new(
                         ash::vk::PhysicalDeviceBufferDeviceAddressFeatures {
                             buffer_device_address: 1,
@@ -376,7 +398,9 @@ impl Plugin for DlssNeuralRenderingPlugin {
         // all lost their top end.
         render_app.add_systems(
             Core3d,
-            dlss_nr_node.in_set(Core3dSystems::PostProcess).after(tonemapping),
+            dlss_nr_node
+                .in_set(Core3dSystems::PostProcess)
+                .after(tonemapping),
         );
     }
 }
@@ -540,7 +564,16 @@ fn dlss_nr_node(
             }
         };
         let bridge = Bridge::new(wd, w, h);
-        guard.views.insert(key, ViewState { feature, bridge, width: w, height: h, evals: 0 });
+        guard.views.insert(
+            key,
+            ViewState {
+                feature,
+                bridge,
+                width: w,
+                height: h,
+                evals: 0,
+            },
+        );
         ctx.add_command_buffer(enc.finish());
         return;
     }
@@ -564,7 +597,14 @@ fn dlss_nr_node(
     let main_view = view_target.main_texture_view();
 
     // Pass 1: encode linear -> sRGB into proxy_in.
-    bridge.pass(wd, ctx.command_encoder(), false, main_view, &bridge.proxy_in_view, w, h);
+    bridge.pass(
+        wd,
+        ctx.command_encoder(),
+        false,
+        main_view,
+        &bridge.proxy_in_view,
+        (w, h),
+    );
 
     // Transition proxy + guides for the raw NGX evaluate.
     use wgpu::{TextureTransition, TextureUses};
@@ -573,10 +613,26 @@ fn dlss_nr_node(
     ctx.command_encoder().transition_resources(
         core::iter::empty::<wgpu::BufferTransition<&wgpu::Buffer>>(),
         [
-            TextureTransition { texture: &bridge.proxy_in, selector: None, state: TextureUses::RESOURCE },
-            TextureTransition { texture: dep_wt, selector: None, state: TextureUses::RESOURCE },
-            TextureTransition { texture: mv_wt, selector: None, state: TextureUses::RESOURCE },
-            TextureTransition { texture: &bridge.proxy_out, selector: None, state: TextureUses::STORAGE_READ_WRITE },
+            TextureTransition {
+                texture: &bridge.proxy_in,
+                selector: None,
+                state: TextureUses::RESOURCE,
+            },
+            TextureTransition {
+                texture: dep_wt,
+                selector: None,
+                state: TextureUses::RESOURCE,
+            },
+            TextureTransition {
+                texture: mv_wt,
+                selector: None,
+                state: TextureUses::RESOURCE,
+            },
+            TextureTransition {
+                texture: &bridge.proxy_out,
+                selector: None,
+                state: TextureUses::STORAGE_READ_WRITE,
+            },
         ]
         .into_iter(),
     );
@@ -585,23 +641,78 @@ fn dlss_nr_node(
     let f16 = VK_FORMAT_R16G16B16A16_SFLOAT;
     let (mut color, mut output, mut depth, mut mvec) = unsafe {
         (
-            ResourceVk::image_view(ngx::raw_view(&bridge.proxy_in_view), ngx::raw_image(&bridge.proxy_in), f16, w, h, false, false),
-            ResourceVk::image_view(ngx::raw_view(&bridge.proxy_out_view), ngx::raw_image(&bridge.proxy_out), f16, w, h, false, true),
-            ResourceVk::image_view(ngx::raw_view(depth_view), ngx::raw_image(depth_tex), ngx::vk_format(&adapter, depth_tex), w, h, true, false),
-            ResourceVk::image_view(ngx::raw_view(mvec_view), ngx::raw_image(mvec_tex), ngx::vk_format(&adapter, mvec_tex), w, h, false, false),
+            ResourceVk::image_view(
+                ngx::raw_view(&bridge.proxy_in_view),
+                ngx::raw_image(&bridge.proxy_in),
+                f16,
+                w,
+                h,
+                false,
+                false,
+            ),
+            ResourceVk::image_view(
+                ngx::raw_view(&bridge.proxy_out_view),
+                ngx::raw_image(&bridge.proxy_out),
+                f16,
+                w,
+                h,
+                false,
+                true,
+            ),
+            ResourceVk::image_view(
+                ngx::raw_view(depth_view),
+                ngx::raw_image(depth_tex),
+                ngx::vk_format(&adapter, depth_tex),
+                w,
+                h,
+                true,
+                false,
+            ),
+            ResourceVk::image_view(
+                ngx::raw_view(mvec_view),
+                ngx::raw_image(mvec_tex),
+                ngx::vk_format(&adapter, mvec_tex),
+                w,
+                h,
+                false,
+                false,
+            ),
         )
     };
-    let mut enc = device.create_command_encoder(&CommandEncoderDescriptor { label: Some("dlss5_eval") });
+    let mut enc = device.create_command_encoder(&CommandEncoderDescriptor {
+        label: Some("dlss5_eval"),
+    });
     let cb = ngx::raw_command_buffer(&mut enc);
     let code = unsafe {
-        core.evaluate(cb, vs.feature as *mut c_void, &mut color, &mut output, &mut depth, &mut mvec,
-            w, h, settings.intensity, settings.tone, settings.structure, reset)
+        core.evaluate(
+            cb,
+            vs.feature as *mut c_void,
+            &mut color,
+            &mut output,
+            &mut depth,
+            &mut mvec,
+            w,
+            h,
+            settings.intensity,
+            settings.tone,
+            settings.structure,
+            reset,
+        )
     };
     ctx.add_command_buffer(enc.finish());
 
     // Pass 3: decode sRGB proxy -> linear back into the main texture.
-    let mut dec = device.create_command_encoder(&CommandEncoderDescriptor { label: Some("dlss5_decode") });
-    bridge.pass(wd, &mut dec, true, &bridge.proxy_out_view, main_view, w, h);
+    let mut dec = device.create_command_encoder(&CommandEncoderDescriptor {
+        label: Some("dlss5_decode"),
+    });
+    bridge.pass(
+        wd,
+        &mut dec,
+        true,
+        &bridge.proxy_out_view,
+        main_view,
+        (w, h),
+    );
     ctx.add_command_buffer(dec.finish());
 
     use std::sync::atomic::AtomicBool;
