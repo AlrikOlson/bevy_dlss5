@@ -8,7 +8,7 @@ NVIDIA ships it for RTX 50 only. This plugin runs it on RTX 40 too (tested on a 
 
 ## What it looks like
 
-Both frames are Bevy 0.19 with Neural Rendering on, from the test rig in this repo's parent (`bevy-sponza`), 1080p, no upscaling. Scene: Amazon Lumberyard Bistro, via NVIDIA ORCA (CC BY 4.0).
+Both frames are Bevy 0.19 with Neural Rendering on, from `bevy-sponza`, the test rig the plugin was built against, 1080p, no upscaling. Scene: Amazon Lumberyard Bistro, via NVIDIA ORCA (CC BY 4.0).
 
 ![Bistro at night: Bevy Solari ray-traced lighting + DLSS Ray Reconstruction + Neural Rendering](docs/bistro_night_solari_nr.jpg)
 
