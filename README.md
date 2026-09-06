@@ -20,9 +20,9 @@ pixel-exact measurement of Neural Rendering alone.
 
 ![Bistro day diagonal comparison: DLSS 5 Neural Rendering OFF on the left, ON on the right](docs/bistro_day_comparison.png)
 
-**Night — Neural Rendering OFF / ON**
+**Dusk — Neural Rendering OFF / ON**
 
-![Bistro night diagonal comparison: DLSS 5 Neural Rendering OFF on the left, ON on the right](docs/bistro_night_comparison.png)
+![Bistro dusk diagonal comparison: DLSS 5 Neural Rendering OFF on the left, ON on the right](docs/bistro_night_comparison.png)
 
 <details>
 <summary>Full screenshots — DLSS 5 Neural Rendering ON, with HUD</summary>
@@ -31,18 +31,21 @@ pixel-exact measurement of Neural Rendering alone.
 
 ![Bistro by day with DLSS 5 Neural Rendering ON and the full demo HUD](docs/bistro_day_hud.png)
 
-**Night — DLSS 5 Neural Rendering ON**
+**Dusk — DLSS 5 Neural Rendering ON**
 
-![Bistro at night with DLSS 5 Neural Rendering ON and the full demo HUD](docs/bistro_night_hud.png)
+![Bistro at dusk with DLSS 5 Neural Rendering ON and the full demo HUD](docs/bistro_night_hud.png)
 
 </details>
 
 The HUD reports live backend status, FPS and application frame times. Timings
 include capture overhead; these images are not an ON/OFF performance comparison.
-Captured September 6, 2026 using rig `5380c3d`, frames 100 (day) and 400 (night),
-with 2,048 and 4,096 fixed-pose warm-up frames respectively. Scene exposure,
-lights and neutral grading use the Bistro preset. Night shadow blotching and
-soft foliage remain after warm-up.
+Refreshed September 6, 2026 with Solarik `cc1f9e6` (GI foliage endpoints)
+and playground `90f532a`, including the matching Bistro interior. These use
+frames 750 (day) and 1520 (dusk) of the 1,800-frame timeline, with 512 and
+1,024 fixed-pose warmup frames respectively. Scene exposure, lights and fog/blur
+use the preset; additional grading is disabled. Shadow variation and soft
+foliage remain. [Capture settings and settling checks](docs/captures.md)
+document the refreshed images.
 
 Scene: [Amazon Lumberyard Bistro, via NVIDIA ORCA](https://developer.nvidia.com/orca/amazon-lumberyard-bistro),
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), using the
