@@ -8,15 +8,45 @@ This is experimental. It has been tested on Windows with an RTX 4090 and Vulkan,
 
 ## What it looks like
 
-Both frames are Bevy 0.19 with Neural Rendering on, from `bevy-sponza`, the test rig the plugin was built against, 1080p, no upscaling. Scene: Amazon Lumberyard Bistro, via NVIDIA ORCA (CC BY 4.0).
+**Left: DLSS 5 Neural Rendering OFF. Right: DLSS 5 Neural Rendering ON.**
+Solarik ray-traced lighting and DLSS Ray Reconstruction remain **ON in both
+halves**. These are native 1920×1080 Bevy 0.19.1 captures, with no upscaling.
+The diagonal split keeps the same camera, lighting, exposure and warm-up
+settings. The lower-right HUD belongs to the ON capture. Separate runs retain
+some stochastic lighting variation; this is a visual comparison rather than a
+pixel-exact measurement of Neural Rendering alone.
 
-![Bistro at night: Bevy Solari ray-traced lighting + DLSS Ray Reconstruction + Neural Rendering](docs/bistro_night_solari_nr.jpg)
+**Day — Neural Rendering OFF / ON**
 
-Night, lit by the lamp glass and string lights only: Bevy Solari ray tracing, DLSS Ray Reconstruction as the denoiser, then Neural Rendering on top. Two DLSS clients in one process, it works.
+![Bistro day diagonal comparison: DLSS 5 Neural Rendering OFF on the left, ON on the right](docs/bistro_day_comparison.png)
 
-![Bistro by day: the raster path + Neural Rendering](docs/bistro_day_nr.jpg)
+**Night — Neural Rendering OFF / ON**
 
-Day, the ordinary raster path (shadow maps, SSAO, SSR) with Neural Rendering. The contact shadows under the leaves and in the hedge are the network's.
+![Bistro night diagonal comparison: DLSS 5 Neural Rendering OFF on the left, ON on the right](docs/bistro_night_comparison.png)
+
+<details>
+<summary>Full screenshots — DLSS 5 Neural Rendering ON, with HUD</summary>
+
+**Day — DLSS 5 Neural Rendering ON**
+
+![Bistro by day with DLSS 5 Neural Rendering ON and the full demo HUD](docs/bistro_day_hud.png)
+
+**Night — DLSS 5 Neural Rendering ON**
+
+![Bistro at night with DLSS 5 Neural Rendering ON and the full demo HUD](docs/bistro_night_hud.png)
+
+</details>
+
+The HUD reports live backend status, FPS and application frame times. Timings
+include capture overhead; these images are not an ON/OFF performance comparison.
+Captured September 6, 2026 using rig `5380c3d`, frames 100 (day) and 400 (night),
+with 2,048 and 4,096 fixed-pose warm-up frames respectively. Scene exposure,
+lights and neutral grading use the Bistro preset. Night shadow blotching and
+soft foliage remain after warm-up.
+
+Scene: [Amazon Lumberyard Bistro, via NVIDIA ORCA](https://developer.nvidia.com/orca/amazon-lumberyard-bistro),
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), using the
+[qian-o glTF conversion](https://github.com/qian-o/GLTF-Assets).
 
 ## Usage
 
