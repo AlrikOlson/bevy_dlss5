@@ -39,12 +39,11 @@ pixel-exact measurement of Neural Rendering alone.
 
 The HUD reports live backend status, FPS and application frame times. Timings
 include capture overhead; these images are not an ON/OFF performance comparison.
-Refreshed September 6, 2026 with Solarik `cc1f9e6` (GI foliage endpoints)
-and playground `90f532a`, including the matching Bistro interior. These use
-frames 750 (day) and 1520 (dusk) of the 1,800-frame timeline, with 512 and
-1,024 fixed-pose warmup frames respectively. Scene exposure, lights and fog/blur
-use the preset; additional grading is disabled. Shadow variation and soft
-foliage remain. [Capture settings and settling checks](docs/captures.md)
+Refreshed September 6, 2026 with Solarik's GPU atmosphere and the matching
+Bistro interior. These use frames 750 (day) and 1520 (dusk) of the 1,800-frame
+timeline, with 512 and 1,024 fixed-pose warmup frames respectively. Exposure,
+lights and motion blur use the scene preset; extra grading and local artistic
+fog are disabled. Shadow variation and soft foliage remain. [Capture settings and settling checks](docs/captures.md)
 document the refreshed images.
 
 Scene: [Amazon Lumberyard Bistro, via NVIDIA ORCA](https://developer.nvidia.com/orca/amazon-lumberyard-bistro),
@@ -153,6 +152,9 @@ The [minimal example](examples/minimal.rs) creates a small scene and lets you to
 - Feature 18 wants gamma encoded display-referred color, Bevy's post tonemap texture is linear. Two tiny compute passes convert to sRGB before and back to linear after. Skip this and you get red hallucinations everywhere.
 - The "after tonemapping" part matters. An earlier version had no ordering constraint, the scheduler ran the node before tonemapping, and the sRGB pass clamped the HDR frame at linear 1.0. Nothing on the NR side could get brighter than what the tonemapper makes of 1.0 (about 198/255 with TonyMcMapface), so emissives, bloom and sun patches all came out dimmer than with NR off. If you fork this, keep the `.after(tonemapping)`.
 - Depth and motion vectors come from the prepasses the component requires.
+- On `AppExit`, render cleanup waits for GPU work and releases NR features and
+  bridge textures before unloading the runtime. This runs while other NGX
+  consumers still exist. Applications should use Bevy's normal exit lifecycle.
 
 ## About patching the DLL
 

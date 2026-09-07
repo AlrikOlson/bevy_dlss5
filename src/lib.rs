@@ -4,6 +4,7 @@ mod bridge;
 mod ngx;
 pub mod patch;
 
+use bevy::app::AppExit;
 use bevy::camera::{CameraMainTextureUsages, Hdr};
 use bevy::core_pipeline::prepass::{DepthPrepass, MotionVectorPrepass, ViewPrepassTextures};
 use bevy::core_pipeline::tonemapping::tonemapping;
@@ -17,7 +18,7 @@ use bevy::render::sync_component::SyncComponent;
 use bevy::render::sync_component::SyncComponentPlugin;
 use bevy::render::sync_world::{MainEntity, RenderEntity};
 use bevy::render::view::ViewTarget;
-use bevy::render::{Extract, ExtractSchedule, RenderApp};
+use bevy::render::{Extract, ExtractSchedule, Render, RenderApp, RenderSystems};
 
 use bridge::Bridge;
 use ngx::{NgxCore, ResourceVk};
@@ -387,9 +388,11 @@ impl Plugin for DlssNeuralRenderingPlugin {
                 project_id: self.project_id.clone(),
                 status,
                 views: HashMap::new(),
+                device: None,
             }),
         });
         render_app.add_systems(ExtractSchedule, extract_dlss_settings);
+        render_app.add_systems(Render, shutdown_dlss_runtime.in_set(RenderSystems::Cleanup));
         // Must run after tonemapping: feature 18 wants display-referred color,
         // and the sRGB bridge clamps to [0, 1]. Without this constraint the
         // scheduler put the node before tonemapping, the clamp cut the HDR
@@ -417,7 +420,11 @@ fn clear_reset_requests(mut cams: Query<&mut DlssNeuralRendering>) {
 fn extract_dlss_settings(
     mut commands: Commands,
     cams: Extract<Query<(RenderEntity, &DlssNeuralRendering)>>,
+    exits: Extract<Res<Messages<AppExit>>>,
 ) {
+    if !exits.is_empty() {
+        commands.insert_resource(Dlss5Shutdown);
+    }
     for (render_entity, settings) in &cams {
         commands.entity(render_entity).insert(settings.clone());
     }
@@ -426,6 +433,9 @@ fn extract_dlss_settings(
 // ---------------------------------------------------------------------------
 // Render-world runtime (lazily initialized; per-view feature handles)
 // ---------------------------------------------------------------------------
+
+#[derive(Resource)]
+struct Dlss5Shutdown;
 
 #[derive(Resource)]
 struct Dlss5Runtime {
@@ -439,7 +449,56 @@ struct Runtime {
     status: DlssNeuralRenderingStatus,
     /// Keyed by the *main-world* camera entity (stable across frames).
     views: HashMap<Entity, ViewState>,
+    // Keep Vulkan alive until features and the snippet library are released.
+    device: Option<RenderDevice>,
 }
+
+impl Runtime {
+    fn shutdown(&mut self) {
+        let Some(core) = &self.core else {
+            return;
+        };
+        if let Some(device) = &self.device {
+            if let Err(error) = device.poll(wgpu::PollType::wait_indefinitely()) {
+                warn!("bevy_dlss5: waiting for GPU work during shutdown failed: {error}");
+            }
+        }
+        let count = self.views.len();
+        for (_, view) in self.views.drain() {
+            if view.feature != 0 {
+                // SAFETY: this core created the handle, the owning device is
+                // retained, queued work has finished, and shutdown is exclusive.
+                unsafe { core.release_feature(view.feature as *mut c_void) };
+            }
+        }
+        // The bridge textures and feature handles must go before DLL unload.
+        self.core = None;
+        self.device = None;
+        self.failed = true;
+        self.status.set(STATUS_UNKNOWN);
+        info!("bevy_dlss5: released {count} view(s) before runtime shutdown");
+    }
+}
+
+impl Drop for Runtime {
+    fn drop(&mut self) {
+        // Also cover an application dropping its App without an AppExit message.
+        self.shutdown();
+    }
+}
+
+fn shutdown_dlss_runtime(shutdown: Option<Res<Dlss5Shutdown>>, mut runtime: ResMut<Dlss5Runtime>) {
+    if shutdown.is_none() {
+        return;
+    }
+    // Cleanup runs after render submission, while other NGX users (including
+    // Ray Reconstruction) and their SDK resources still exist in the world.
+    match runtime.inner.get_mut() {
+        Ok(inner) => inner.shutdown(),
+        Err(poisoned) => poisoned.into_inner().shutdown(),
+    }
+}
+
 struct ViewState {
     /// Feature-18 handle as usize so ViewState stays Send + Sync. 0 = failed.
     feature: usize,
@@ -513,6 +572,7 @@ fn dlss_nr_node(
             Ok(core) => {
                 info!("bevy_dlss5: DLSS 5 Neural Rendering initialized");
                 guard.status.set(STATUS_ACTIVE);
+                guard.device = Some((*device).clone());
                 guard.core = Some(core);
             }
             Err(reason) => {

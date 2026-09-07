@@ -96,8 +96,8 @@ pub struct NgxCore {
     eval: PfnEval,
     release: PfnRelease,
 }
-// SAFETY: the raw pointers/handles are only touched on the render thread, which
-// this crate serializes behind a Mutex.
+// SAFETY: render access is serialized behind a Mutex. Shutdown has exclusive
+// access, retains the device and waits for submitted work before releasing handles.
 unsafe impl Send for NgxCore {}
 unsafe impl Sync for NgxCore {}
 

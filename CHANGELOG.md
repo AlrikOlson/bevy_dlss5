@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Keep the render device alive through NR shutdown, wait for GPU work, and
+  release feature handles and bridge textures before unloading the runtime DLL.
+- Handle application exit in render cleanup while other NGX consumers remain alive.
+
 ## 0.1.1 — 2026-09-06
 
 First tagged release.
