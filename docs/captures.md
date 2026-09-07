@@ -1,6 +1,94 @@
 # README capture record
 
-## Current GPU atmosphere images
+## Current images with the corrected Bistro interior
+
+September 6, 2026 (local): refreshed from the final integrated release build
+after repairing the Bistro interior import. Source bases: Solarik `df9a05a`,
+DLSS5 `e8b2703` and playground `740e78a`, plus the paired-import fix.
+Executable SHA-256:
+`3a996f4bad28d5fc5ed428e41546ec78a9c65924406b2450d9844cf25b514056`.
+Windows/Vulkan, RTX 4090, NVIDIA Studio driver 616.56. Build with
+`cargo build --release --locked` in the playground.
+
+The qian-o exterior needs import scale **0.625**; its interior needs **1.0**.
+The old recipe incorrectly applied 0.625 to both. Reimporting aligns eight
+shared facade anchors within 0.004 mm and makes the audited window rays hit
+real room surfaces. Those earlier bright window patches were empty-world
+visibility, not emissive interiors. Run
+`python tools/import_bistro.py "C:/scenes/GLTF-Assets/Bistro"` in the playground
+to repair an old local import. Its `docs/bistro-glass.md` contains the
+before/after crops and ray-distance regression.
+
+Solarik's GPU atmosphere and native-resolution DLSS Ray Reconstruction remain
+active. The atmosphere uses High quality, density scales 1, Mie g 0.8,
+2,000 m aerial distance and IBL scale 1. Exposure uses the preset's
+12.5/5.0 EV100 day/night curve; scene lamps are unchanged. Extra grading and
+local artistic fog are disabled (`SCENE_FX=blur`); GPU timestamp diagnostics
+are off. Camera and lighting stay fixed throughout warmup. Historical
+`night` filenames contain dusk views.
+
+All four README images use 1920×1080 rendering: timeline 750 / 1800 with
+512 fixed-pose warmup frames by day, 1520 / 1800 with 1,024 at dusk.
+Both full HUD images have Neural Rendering on. The comparison sources use
+matching camera, lighting, exposure, resolution and warmup with NR off/on.
+
+Independent warmups use identical camera and lighting. The metric is regional
+mean sRGB-decoded display-linear luminance, with weights (0.2126, 0.7152, 0.0722).
+Absolute changes are on the same 0–1 display-linear scale.
+
+| View / region | Rectangle x, y, width, height | Warmup comparison | Luminance change | Absolute change |
+| --- | --- | --- | ---: | ---: |
+| HUD day pavement | 215, 965, 275, 95 | 128 to 512 | +1.03% | +0.000186 |
+| HUD day facade | 1125, 50, 450, 225 | 128 to 512 | +0.45% | +0.000138 |
+| HUD day wall | 555, 590, 250, 165 | 128 to 512 | +3.32% | +0.000272 |
+| HUD dusk pavement | 50, 860, 380, 125 | 512 to 1024 | +0.37% | +0.000037 |
+| HUD dusk facade | 65, 75, 335, 225 | 512 to 1024 | +1.25% | +0.000914 |
+| HUD dusk wall | 1075, 830, 255, 140 | 512 to 1024 | +1.13% | +0.000035 |
+
+The HUD regions change at most 3.32% by day and 1.25% at dusk.
+The separate Solarik night control still has a −5.82% cafe-wall change from
+2,048 to 4,096 frames, recorded with the existing night-quality follow-up.
+
+The diagonal comparisons preserve source pixels in each half. Only a
+three-pixel divider and a 100-pixel external label strip are added. The
+lower-right HUD comes from the ON capture. Separate runs retain stochastic
+lighting differences, and HUD timings include capture overhead; the images
+do not benchmark the isolated cost of Neural Rendering.
+
+From the playground in Git Bash, after the paired import and release build:
+
+```bash
+SCENE=bistro SCENE_HUD=1 NR_RES=1920x1080 NR_START=750 NR_TIMELINE=1800 NR_CAPTURE=1 NR_WARMUP=512 SCENE_FX=blur SCENE_DIAG=0 NR_OUT=../artifacts/bevy-sponza/glass-leak-hud-day-on-512 python tools/launch.py capture on
+SCENE=bistro SCENE_HUD=1 NR_RES=1920x1080 NR_START=1520 NR_TIMELINE=1800 NR_CAPTURE=1 NR_WARMUP=1024 SCENE_FX=blur SCENE_DIAG=0 NR_OUT=../artifacts/bevy-sponza/glass-leak-hud-night-on-1024 python tools/launch.py capture on
+```
+
+Repeat with `capture off` and distinct output directories for the OFF sources.
+
+All final images were inspected. These bounded regional comparisons do not
+establish full convergence; dark interiors, foliage softness and stochastic
+spatial variation remain.
+
+All 18 serial captures produced fresh PNGs, exited normally and had
+no shader/validation errors or Windows NVIDIA driver events. Both NR ON logs
+confirm active evaluation and explicit feature release before runtime shutdown.
+All runtime source and imported geometry hashes match the capture manifest.
+The only removed manifest entry was an unused standalone interior preset
+created by the importer; the assembled Bistro loads the interior glTF directly.
+
+The organizer's local `artifacts/bevy-sponza/glass_leak_readme_capture.py`
+retains the recipes and `glass-leak-*/capture-result.json` the exact settings.
+`glass-leak-build.json`, `glass-leak-settling.json`,
+`glass-leak-driver-audit.json` and `glass-leak-final-audit.json` record the
+source/asset hashes, measurements and checks. `glass-leak-readme-inventory.json`
+verifies all **12** README image files across the three active repositories,
+including details blocks and matching duplicates. The four comparison/HUD
+images are byte-identical in the playground and DLSS5 repositories.
+
+## Earlier GPU atmosphere images (undersized interior)
+
+The following record is historical. Its incorrect interior scale allowed
+empty-world visibility behind some cafe panes. The images referenced by the
+README have all been replaced by the corrected assembly above.
 
 September 6, 2026 (local): captured from the integrated release build containing
 the GPU clear-sky atmosphere, stable fixed-camera interpolation and shared
