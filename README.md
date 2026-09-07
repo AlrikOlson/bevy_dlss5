@@ -39,8 +39,8 @@ pixel-exact measurement of Neural Rendering alone.
 
 The HUD reports live backend status, FPS and application frame times. Timings
 include capture overhead; these images are not an ON/OFF performance comparison.
-Refreshed September 6, 2026 with Solarik's GPU atmosphere and the Bistro
-interior reimported at its correct scale. These use frames 750 (day) and 1520
+Refreshed September 7, 2026 from the integrated weapon-inspection build,
+with Solarik's GPU atmosphere and the correctly scaled Bistro interior. These use frames 750 (day) and 1520
 (dusk) of the 1,800-frame timeline, with 512 and 1,024 fixed-pose warmup frames
 respectively. Exposure,
 lights and motion blur use the scene preset; extra grading and local artistic

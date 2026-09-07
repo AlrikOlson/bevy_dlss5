@@ -1,6 +1,65 @@
 # README capture record
 
-## Current images with the corrected Bistro interior
+## Current images from the weapon inspection build
+
+September 7, 2026 (local): refreshed from the integrated release build containing
+the weapon import and inspection scene. Source bases: playground `fc946ff`,
+Solarik `c531ee0` and DLSS5 `ee359d5`, plus the weapon inspection changes.
+The Bistro scene and renderer source are unchanged by this iteration.
+Executable SHA-256:
+`44d81039a0bb8c47cd5cc61dddf11f794ebfdaa46e1c4a0a9bfd75b2e62bb0c1`.
+Windows/Vulkan, RTX 4090, NVIDIA Studio driver 616.56; build with
+`cargo build --release --locked` in the playground.
+
+These images retain the corrected exterior/interior import described below.
+GPU atmosphere uses High quality, density scales 1, Mie g 0.8, 2,000 m aerial
+distance and IBL scale 1. Native-resolution DLSS Ray Reconstruction is active.
+The preset supplies exposure (12.5/5.0 EV100 day/night) and lamps.
+`SCENE_FX=blur` and `SCENE_DIAG=0`; every warmup holds camera and lighting fixed.
+Historical `night` filenames contain dusk views.
+
+All four images render at 1920×1080. The day pose is timeline 750 / 1800
+with 512 warmup frames; dusk is 1520 / 1800 with 1,024. Both full HUD images
+have NR on. Comparisons use matching pose, exposure and warmup with NR off/on.
+Matching playground copies are byte-identical.
+
+Independent warmups measure mean sRGB-decoded display-linear luminance with
+weights (0.2126, 0.7152, 0.0722). Absolute changes use the same 0–1 scale.
+
+| View / region | Rectangle x, y, width, height | Warmup frames | Change | Absolute change |
+| --- | --- | --- | ---: | ---: |
+| HUD day pavement | 215, 965, 275, 95 | 128 to 512 | +1.39% | +0.000258 |
+| HUD day facade | 1125, 50, 450, 225 | 128 to 512 | -0.19% | -0.000060 |
+| HUD day wall | 555, 590, 250, 165 | 128 to 512 | +2.38% | +0.000132 |
+| HUD dusk pavement | 50, 860, 380, 125 | 512 to 1024 | +0.60% | +0.000061 |
+| HUD dusk facade | 65, 75, 335, 225 | 512 to 1024 | -0.01% | -0.000009 |
+| HUD dusk wall | 1075, 830, 255, 140 | 512 to 1024 | -1.04% | -0.000039 |
+
+The diagonal comparisons use the OFF source on the left and ON on the right,
+preserving source pixels except for the narrow divider and a 100-pixel external
+label strip. The lower-right HUD comes from the ON source. Separate runs retain
+stochastic lighting differences; HUD timings include capture overhead and do
+not benchmark isolated Neural Rendering cost.
+
+
+All final images were inspected. All 14 serial Bistro runs produced fresh PNGs,
+exited normally and had no shader or validation errors. NR ON logs confirm active
+evaluation and explicit feature release. The organizer's local
+`artifacts/bevy-sponza/weapon_import_capture.py` records exact launch environments
+and image hashes; `weapon_import_audit.py` records source/binary identity,
+regional settling and all 12 README image paths with matching duplicate hashes.
+Its receipts are `wii-build.json`, `wii-settling.json`,
+`wii-readme-inventory.json` and `wii-final-audit.json`. The latter records one
+nonsemantic difference after capture: final whitespace review removed a trailing
+blank line from the weapon preset, verified by restoring that single newline
+and matching its captured SHA-256. All executable sources and scene values match.
+
+These bounded samples do not establish full convergence. Dark interiors,
+foliage softness and stochastic spatial variation remain. The night control's
+cafe wall changes -3.17% (-0.000166) from 2,048 to 4,096 warmup frames; the
+existing night-image-quality follow-up remains open.
+
+## Historical images with the corrected Bistro interior
 
 September 6, 2026 (local): refreshed from the final integrated release build
 after repairing the Bistro interior import. Source bases: Solarik `df9a05a`,
