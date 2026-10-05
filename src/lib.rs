@@ -402,11 +402,16 @@ impl Plugin for DlssNeuralRenderingPlugin {
         render_app.add_systems(
             Core3d,
             dlss_nr_node
+                .in_set(DlssNeuralRenderingSet)
                 .in_set(Core3dSystems::PostProcess)
                 .after(tonemapping),
         );
     }
 }
+
+/// Public ordering boundary for radiometric composition and external diagnostics.
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DlssNeuralRenderingSet;
 
 fn clear_reset_requests(mut cams: Query<&mut DlssNeuralRendering>) {
     for mut settings in &mut cams {
