@@ -2,7 +2,7 @@
 name = "bevy_dlss5"
 version = "0.1.1"
 edition = "2021"
-description = "DLSS 5 Neural Rendering (NGX feature 18) as a Bevy 0.19 plugin"
+description = "DLSS 5 Neural Rendering (NGX feature 18) as a Bevy 0.20 plugin"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/AlrikOlson/bevy_dlss5"
 readme = "README.md"
@@ -10,20 +10,20 @@ keywords = ["bevy", "dlss", "nvidia", "ngx", "rendering"]
 categories = ["game-development", "rendering"]
 
 [dependencies]
-bevy = { version = "0.19.1", default-features = false, features = [
+bevy = { version = "0.20.0", default-features = false, features = [
     "bevy_render",
     "bevy_core_pipeline",
     "bevy_pbr",
     "bevy_log",
     "raw_vulkan_init",
 ] }
-wgpu = { version = "29.0.3", default-features = false, features = ["vulkan"] }
+wgpu = { version = "=30.0.1", default-features = false, features = ["vulkan"] }
 ash = "0.38"
 libloading = "0.8"
 
 # The example needs a windowed app + glTF loading; keep these out of the library.
 [dev-dependencies]
-bevy = { version = "0.19.1", features = ["raw_vulkan_init"] }
+bevy = { version = "0.20.0", features = ["raw_vulkan_init"] }
 
 [[example]]
 name = "minimal"

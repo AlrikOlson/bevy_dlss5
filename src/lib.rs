@@ -277,7 +277,7 @@ impl Default for DlssNeuralRendering {
     }
 }
 
-impl SyncComponent for DlssNeuralRendering {
+impl SyncComponent<bevy::render::RenderApp> for DlssNeuralRendering {
     type Target = Self;
 }
 

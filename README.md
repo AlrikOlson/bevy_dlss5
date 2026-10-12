@@ -1,6 +1,6 @@
 # bevy_dlss5
 
-DLSS 5 Neural Rendering for Bevy 0.19.1. It adds neural lighting detail to the rendered image using NGX feature 18, with the camera's depth and motion vectors.
+DLSS 5 Neural Rendering for Bevy 0.20.0 and wgpu 30.0.1. It adds neural lighting detail to the rendered image using NGX feature 18, with the camera's depth and motion vectors. The current checkout pins Rust 1.98.0; retain a single wgpu major across the host renderer and this raw Vulkan integration.
 
 This is experimental. It has been tested on Windows with an RTX 4090 and Vulkan, using a DLL built for that GPU. The runtime setup has a few quirks; read [Requirements](#requirements) before trying it.
 
@@ -53,12 +53,12 @@ Scene: [Amazon Lumberyard Bistro, via NVIDIA ORCA](https://developer.nvidia.com/
 
 ## Usage
 
-Add the tagged version to your `Cargo.toml`:
+Add this checkout as a local dependency in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-bevy = "0.19.1"
-bevy_dlss5 = { git = "https://github.com/AlrikOlson/bevy_dlss5", tag = "v0.1.1" }
+bevy = "=0.20.0"
+bevy_dlss5 = { path = "../bevy_dlss5" }
 ```
 
 Add the plugin before `DefaultPlugins`, then put the component on your camera:
